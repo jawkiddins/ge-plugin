@@ -7,6 +7,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.runelite.api.Client;
 import net.runelite.api.widgets.Widget;
+import net.runelite.client.callback.ClientThread;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
@@ -23,6 +24,9 @@ public class ExamplePlugin extends Plugin
     @Inject
     private Client client;
 
+    @Inject
+    private ClientThread clientThread;
+
     private static final Pattern COIN_PATTERN = Pattern.compile("([\\d,]+)\\s+coins");
     private static final int GE_HISTORY_GROUP_ID = 232;
     private static final int GE_HISTORY_CHILD_ID = 2; 
@@ -32,7 +36,8 @@ public class ExamplePlugin extends Plugin
     {
         if (event.getGroupId() == GE_HISTORY_GROUP_ID)
         {
-            client.getCallbacks().postRunnable(this::calculateAndAppendMargins);
+            // Safely schedules the logic to run on the client thread after widgets load
+            clientThread.invokeLater(this::calculateAndAppendMargins);
         }
     }
 
