@@ -27,7 +27,8 @@ public class ExamplePlugin extends Plugin
     @Inject
     private ClientThread clientThread;
 
-    private static final Pattern COIN_PATTERN = Pattern.compile("([\\d,]+)\\s+coins");
+    // Patched RegEx to handle the game's native line breaks and tax breakdowns smoothly
+    private static final Pattern COIN_PATTERN = Pattern.compile("^([\\d,]+)\\s+coins");
     private static final int GE_HISTORY_GROUP_ID = 232;
     private static final int GE_HISTORY_CHILD_ID = 2; 
 
@@ -36,7 +37,6 @@ public class ExamplePlugin extends Plugin
     {
         if (event.getGroupId() == GE_HISTORY_GROUP_ID)
         {
-            // Safely schedules the logic to run on the client thread after widgets load
             clientThread.invokeLater(this::calculateAndAppendMargins);
         }
     }
@@ -101,11 +101,11 @@ public class ExamplePlugin extends Plugin
                 String currentText = targetWidget.getText();
                 if (currentText.contains("Margin:")) continue;
 
-                int tax = (int) Math.min(5000000, Math.floor(soldPrice * 0.02));
-                int netMargin = soldPrice - boughtPrice - tax;
+                // Safely uses the native post-tax coin number already calculated by the game
+                int netMargin = soldPrice - boughtPrice;
 
                 String colorTag = (netMargin >= 0) ? "<col=00ff00>" : "<col=ff0000>";
-                String finalString = currentText + " " + colorTag + "Margin: " + netMargin + "</col>";
+                String finalString = currentText + "<br>" + colorTag + "Margin: " + netMargin + "</col>";
 
                 targetWidget.setText(finalString);
             }
@@ -114,7 +114,9 @@ public class ExamplePlugin extends Plugin
 
     private int parseCoinAmount(String text)
     {
-        Matcher matcher = COIN_PATTERN.matcher(text);
+        // Cleans up line breaks so the math engine only grabs the main coin count integer
+        String cleanText = text.split("<br>|\n")[0].trim();
+        Matcher matcher = COIN_PATTERN.matcher(cleanText);
         if (matcher.find())
         {
             try
