@@ -27,8 +27,7 @@ public class ExamplePlugin extends Plugin
     @Inject
     private ClientThread clientThread;
 
-    // Patched RegEx to handle the game's native line breaks and tax breakdowns smoothly
-    private static final Pattern COIN_PATTERN = Pattern.compile("^([\\d,]+)\\s+coins");
+    private static final Pattern COIN_PATTERN = Pattern.compile("([\\d,]+)\\s+coins");
     private static final int GE_HISTORY_GROUP_ID = 232;
     private static final int GE_HISTORY_CHILD_ID = 2; 
 
@@ -101,7 +100,7 @@ public class ExamplePlugin extends Plugin
                 String currentText = targetWidget.getText();
                 if (currentText.contains("Margin:")) continue;
 
-                // Safely uses the native post-tax coin number already calculated by the game
+                // Uses the post-tax price already computed by the game UI
                 int netMargin = soldPrice - boughtPrice;
 
                 String colorTag = (netMargin >= 0) ? "<col=00ff00>" : "<col=ff0000>";
@@ -114,8 +113,8 @@ public class ExamplePlugin extends Plugin
 
     private int parseCoinAmount(String text)
     {
-        // Cleans up line breaks so the math engine only grabs the main coin count integer
-        String cleanText = text.split("<br>|\n")[0].trim();
+        // Safely handles the line breaks and Jagex tax labels
+        String cleanText = text.replace("<br>", " ").replace("\n", " ").trim();
         Matcher matcher = COIN_PATTERN.matcher(cleanText);
         if (matcher.find())
         {
